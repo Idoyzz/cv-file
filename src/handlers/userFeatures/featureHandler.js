@@ -365,8 +365,15 @@ const handleDone = async (ctx) => {
 // Handler for Cancel button
 const handleCancel = async (ctx) => {
   try {
+    // Delete message with cancel button first
+    try {
+      await ctx.deleteMessage();
+    } catch (error) {
+      console.error('Error deleting message with cancel button:', error);
+    }
+    
     // Delete confirmation message
-    if (ctx.dbSession.confirmationMessageId) {
+    if (ctx.dbSession && ctx.dbSession.confirmationMessageId) {
       try {
         await ctx.telegram.deleteMessage(ctx.chat.id, ctx.dbSession.confirmationMessageId);
         ctx.dbSession.confirmationMessageId = null;
@@ -376,35 +383,37 @@ const handleCancel = async (ctx) => {
     }
     
     // Reset session
-    ctx.dbSession.mode = 'none';
-    
-    // Clean up files
-    for (const file of ctx.dbSession.files || []) {
-      try {
-        if (file.filePath && fs.existsSync(file.filePath)) {
-          await fs.remove(file.filePath);
+    if (ctx.dbSession) {
+      ctx.dbSession.mode = 'none';
+      
+      // Clean up files
+      for (const file of ctx.dbSession.files || []) {
+        try {
+          if (file.filePath && fs.existsSync(file.filePath)) {
+            await fs.remove(file.filePath);
+          }
+        } catch (error) {
+          console.error('Error removing file:', error);
         }
-      } catch (error) {
-        console.error('Error removing file:', error);
       }
+      
+      ctx.dbSession.files = [];
+      ctx.dbSession.waitingForConfirmation = false;
+      ctx.dbSession.waitingForFilename = false;
+      ctx.dbSession.waitingForSplitCount = false;
+      ctx.dbSession.waitingForProcessing = false;
+      ctx.dbSession.waitingForNumbersText = false;
+      ctx.dbSession.waitingForFileType = false;
+      ctx.dbSession.renameSame = true;
+      ctx.dbSession.filename = '';
+      ctx.dbSession.splitCount = 0;
+      ctx.dbSession.currentFileIndex = 0;
+      ctx.dbSession.processedFiles = [];
+      ctx.dbSession.numbersText = '';
+      ctx.dbSession.fileType = '';
+      
+      await ctx.dbSession.save();
     }
-    
-    ctx.dbSession.files = [];
-    ctx.dbSession.waitingForConfirmation = false;
-    ctx.dbSession.waitingForFilename = false;
-    ctx.dbSession.waitingForSplitCount = false;
-    ctx.dbSession.waitingForProcessing = false;
-    ctx.dbSession.waitingForNumbersText = false;
-    ctx.dbSession.waitingForFileType = false;
-    ctx.dbSession.renameSame = true;
-    ctx.dbSession.filename = '';
-    ctx.dbSession.splitCount = 0;
-    ctx.dbSession.currentFileIndex = 0;
-    ctx.dbSession.processedFiles = [];
-    ctx.dbSession.numbersText = '';
-    ctx.dbSession.fileType = '';
-    
-    await ctx.dbSession.save();
     
     await ctx.reply(`
 🛑 <b>OPERASI DIBATALKAN</b>
