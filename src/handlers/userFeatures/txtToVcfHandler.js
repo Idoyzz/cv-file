@@ -38,7 +38,7 @@ const processFiles = async (ctx) => {
         const phoneNumbers = await fileUtils.parseTxtFile(file.filePath);
         
         // Generate output path
-        const outputFileName = `${baseFilename}${i > 0 ? ` ${i + 1}` : ''}.vcf`;
+        const outputFileName = fileUtils.getFormattedFilename(baseFilename, i > 0 ? i + 1 : null) + '.vcf';
         const outputPath = path.join(config.tempDir, outputFileName);
         
         // Convert to VCF
