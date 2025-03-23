@@ -111,6 +111,7 @@ Silakan kirim file dengan ekstensi yang benar.
         if (ctx.dbSession.confirmationMessageId) {
           try {
             await ctx.telegram.deleteMessage(ctx.chat.id, ctx.dbSession.confirmationMessageId);
+            ctx.dbSession.confirmationMessageId = null;
           } catch (error) {
             console.error('Error deleting confirmation message:', error);
           }
@@ -127,13 +128,16 @@ Silakan kirim file dengan ekstensi yang benar.
             // Hapus pesan sementara
             await ctx.telegram.deleteMessage(ctx.chat.id, tempMsg.message_id);
             
-            // Kirim pesan konfirmasi dengan tombol
-            const confirmMsg = await messageUtils.sendConfirmationMessage(ctx);
-            
-            // Simpan ID pesan konfirmasi
-            ctx.dbSession.confirmationMessageId = confirmMsg.message_id;
-            ctx.dbSession.waitingForConfirmation = true;
-            await ctx.dbSession.save();
+            // Kirim pesan konfirmasi dengan tombol HANYA jika tidak ada pesan konfirmasi sebelumnya
+            // atau jika waktu sudah habis
+            if (!ctx.dbSession.confirmationMessageId) {
+              const confirmMsg = await messageUtils.sendConfirmationMessage(ctx);
+              
+              // Simpan ID pesan konfirmasi
+              ctx.dbSession.confirmationMessageId = confirmMsg.message_id;
+              ctx.dbSession.waitingForConfirmation = true;
+              await ctx.dbSession.save();
+            }
           } catch (error) {
             console.error('Error handling confirmation message:', error);
           }
