@@ -16,7 +16,7 @@ const processFiles = async (ctx) => {
     const files = ctx.dbSession.files;
     const baseFilename = ctx.dbSession.filename;
     
-    // Extract starting number from filename if any
+    // Get starting index from filename
     let fileCounter = 1;
     const match = baseFilename.match(/(\d+)$/);
     if (match) {
@@ -29,9 +29,8 @@ const processFiles = async (ctx) => {
       const loadingMsg = await ctx.reply(`🔄 Memproses file ${i + 1}/${files.length}...`);
       
       try {
-        // Generate output path
-        const outputFileName = baseFilename.replace(/\d+$/, '') + 
-          (fileCounter > 1 ? fileCounter : '') + '.txt';
+        // Generate output filename with proper numbering
+        const outputFileName = fileUtils.getFormattedFilename(baseFilename, i > 0 ? fileCounter + i : null) + '.txt';
         const outputPath = path.join(config.tempDir, outputFileName);
         
         // Convert to TXT
@@ -47,9 +46,6 @@ const processFiles = async (ctx) => {
             caption: `✅ Konversi Selesai!\n📱 Jumlah nomor: ${result.count}` 
           }
         );
-        
-        // Increment file counter
-        fileCounter++;
         
         // Clean up
         if (fs.existsSync(result.path)) {
