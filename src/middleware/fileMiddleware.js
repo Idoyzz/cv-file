@@ -96,7 +96,11 @@ Silakan kirim file dengan ekstensi yang benar.
         writeStream.close();
         
         // Hapus pesan sebelumnya
-        await ctx.telegram.deleteMessage(ctx.chat.id, message.message_id);
+        try {
+          await ctx.telegram.deleteMessage(ctx.chat.id, message.message_id);
+        } catch (error) {
+          console.log(`Info: Could not delete message ${message.message_id}: ${error.message}`);
+        }
         
         // Tambahkan file ke session
         ctx.dbSession.files.push({
@@ -112,42 +116,68 @@ Silakan kirim file dengan ekstensi yang benar.
           try {
             await ctx.telegram.deleteMessage(ctx.chat.id, ctx.dbSession.confirmationMessageId);
             ctx.dbSession.confirmationMessageId = null;
+            await ctx.dbSession.save();
           } catch (error) {
-            console.error('Error deleting confirmation message:', error);
+            // Message might have been deleted already, just reset the ID
+            console.log(`Info: Confirmation message ${ctx.dbSession.confirmationMessageId} not found or already deleted`);
+            ctx.dbSession.confirmationMessageId = null;
+            await ctx.dbSession.save();
           }
         }
         
         // Kirim pesan sementara
-        const tempMsg = await ctx.reply(`✅ File <b>${fileName}</b> diterima!`, { 
-          parse_mode: 'HTML' 
-        });
+        let tempMsg;
+        try {
+          tempMsg = await ctx.reply(`✅ File <b>${fileName}</b> diterima!`, { 
+            parse_mode: 'HTML' 
+          });
+        } catch (error) {
+          console.error('Error sending temp message:', error);
+          return;
+        }
         
         // Set timeout untuk pesan konfirmasi
         setTimeout(async () => {
           try {
             // Hapus pesan sementara
-            await ctx.telegram.deleteMessage(ctx.chat.id, tempMsg.message_id);
+            try {
+              await ctx.telegram.deleteMessage(ctx.chat.id, tempMsg.message_id);
+            } catch (deleteError) {
+              console.log(`Info: Could not delete temporary message ${tempMsg.message_id}: ${deleteError.message}`);
+            }
             
-            // Kirim pesan konfirmasi dengan tombol HANYA jika tidak ada pesan konfirmasi sebelumnya
-            // atau jika waktu sudah habis
-            if (!ctx.dbSession.confirmationMessageId) {
+            // Kirim pesan konfirmasi dengan tombol
+            // Periksa apakah session masih aktif
+            const currentSession = await ctx.getSession();
+            if (!currentSession || currentSession.waitingForConfirmation) {
+              console.log('Session not active or already waiting for confirmation');
+              return;
+            }
+            
+            try {
               const confirmMsg = await messageUtils.sendConfirmationMessage(ctx);
               
               // Simpan ID pesan konfirmasi
               ctx.dbSession.confirmationMessageId = confirmMsg.message_id;
               ctx.dbSession.waitingForConfirmation = true;
               await ctx.dbSession.save();
+            } catch (confirmError) {
+              console.error('Error sending confirmation message:', confirmError);
             }
           } catch (error) {
-            console.error('Error handling confirmation message:', error);
+            console.error('Error in timeout handler:', error);
           }
-        }, config.fileWaitTimeout); // Tunggu 3 detik
+        }, config.fileWaitTimeout); // Timeout delay
       });
     }).on('error', async (err) => {
       console.error('Error downloading file:', err);
       
       // Hapus pesan sebelumnya
-      await ctx.telegram.deleteMessage(ctx.chat.id, message.message_id);
+      try {
+        await ctx.telegram.deleteMessage(ctx.chat.id, message.message_id);
+      } catch (deleteError) {
+        console.log(`Could not delete message ${message.message_id}: ${deleteError.message}`);
+      }
       
       // Kirim pesan error
       ctx.reply('❌ Gagal mengunduh file. Silakan coba lagi.');
