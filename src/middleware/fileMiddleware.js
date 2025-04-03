@@ -147,9 +147,8 @@ Silakan kirim file dengan ekstensi yang benar.
             }
             
             // Kirim pesan konfirmasi dengan tombol
-            // Periksa apakah session masih aktif
-            const currentSession = await ctx.getSession();
-            if (!currentSession || currentSession.waitingForConfirmation) {
+            // Periksa apakah session masih aktif dan belum menunggu konfirmasi
+            if (!ctx.dbSession || ctx.dbSession.waitingForConfirmation) {
               console.log('Session not active or already waiting for confirmation');
               return;
             }
