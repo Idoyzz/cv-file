@@ -1,15 +1,15 @@
 module.exports = {
   // Konfigurasi Bot
-  botToken: '7037157690:AAFJ7u3B-S1uiIu79jxeUGQxvPG-cIzf8G0', // Ganti dengan token bot Anda
+  botToken: '8033515325:AAERTnxsHIVmEY_a7e-FrXdL796JNdxlcVI', // Ganti dengan token bot Anda
   
   // Konfigurasi database MongoDB
-  mongoURI: 'mongodb+srv://vcfdatabase:vcfDatabaseHiyaok@vcf.kiamp.mongodb.net/?retryWrites=true&w=majority&appName=vcf',
+  mongoURI: 'mongodb+srv://doyuserbot:<db_password>@cluster1.g0zuhry.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1',
   
   // Konfigurasi admin
-  adminIds: [5988451717, 6341301515], // Ganti dengan ID Telegram admin sebenarnya
+  adminIds: [8024743123], // Ganti dengan ID Telegram admin sebenarnya
   
   // Info kontak owner untuk pembelian akses
-  ownerUsername: 'hiyaok', // Ganti dengan username owner
+  ownerUsername: 'gerhanamars', // Ganti dengan username owner
   
   // Konfigurasi direktori
   tempDir: './temp',
@@ -19,7 +19,7 @@ module.exports = {
   fileWaitTimeout: 3000, // Waktu tunggu 3 detik untuk file upload
   
   // Timezone untuk premium expiry
-  timezone: 'Asia/Jakarta',
+  timezone: 'Asia/Makassar',
   
   // Max file size untuk upload (dalam bytes)
   maxFileSize: 20 * 1024 * 1024, // 20MB
